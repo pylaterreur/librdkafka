@@ -19,6 +19,20 @@
   failed allocation can never leave a non-zero count beside a `NULL`
   pointer (#5580, @shoemoney).
 
+### Transactional producer fixes
+
+* `abort_transaction()` no longer sends `EndTxn` when every partition in
+  `AddPartitionsToTxn` was rejected by the transaction coordinator, e.g.
+  while retrying `CONCURRENT_TRANSACTIONS`. The coordinator had not started
+  the transaction, so `EndTxn` failed with a fatal `INVALID_TXN_STATE`
+  error (#4849, #5678).
+
+* `abort_transaction()` now waits for an in-flight `AddPartitionsToTxn`
+  response before deciding whether to send `EndTxn`. Previously it could
+  send `EndTxn` for a transaction the coordinator never started (fatal
+  `INVALID_TXN_STATE`), or skip it for one that was started, leaving the
+  transaction open until the coordinator timed it out (#4849, #5678).
+
 
 # librdkafka v2.16.0
 
